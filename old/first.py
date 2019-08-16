@@ -6,20 +6,17 @@
 # 
 # ######################################
 
-import re, os
+import re, os, sys
 from mpl_toolkits import mplot3d
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
-import time
 
 n = 0.0
 coords = []
 x = []
 y = []
 z = []
-
 fig = plt.figure(figsize=(5,5))
 ax = plt.axes(projection='3d')
 ax.set_axis_off()
@@ -27,9 +24,11 @@ ax.set_axis_off()
 #ax.view_init(60, 35)
 ax.set_aspect('equal')
 
-file = open('d.gcode','r')
+file = open(f,'r')
 gcode = file.readlines()
 print("reading gcode...")
+
+imgname='img.png'
 
 numlayers = 0
 numlayers_Ze = 0
@@ -88,7 +87,7 @@ ax.scatter3D(x, y, z, c=z, s=4, cmap='rainbow');
 
 #plt.show()
 print("saving image...")
-fig.savefig(str(time.time())+".png", dpi=150)
+fig.savefig(imgname, dpi=150)
 
 print("finished...")
 
