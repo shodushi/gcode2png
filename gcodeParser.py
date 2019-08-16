@@ -14,9 +14,6 @@ class GcodeParser:
 			# init line counter
 			self.lineNb = 0
 			# for all lines
-			START_PATTERN = '^; support$'
-			END_PATTERN = '^;'
-
 			ignore = False
 
 			for line in f:
@@ -27,6 +24,8 @@ class GcodeParser:
 
 				##ignore support layers
 				if line.startswith("; support"):
+					ignore = True
+				if line.startswith("; feature support"):
 					ignore = True
 				if line.startswith("; layer"):
 					ignore = False

@@ -28,10 +28,12 @@ class SupportParser:
 				##ignore support layers
 				if line.startswith("; support"):
 					ignore = False
+				if line.startswith("; feature support"):
+					ignore = False
 				if line.startswith("; layer"):
 					ignore = True
 				if line.startswith("; layer end"):
-					ignore = False
+					ignore = True
 
 				if not ignore:
 					self.parseLine()
