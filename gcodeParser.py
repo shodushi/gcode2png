@@ -23,15 +23,11 @@ class GcodeParser:
 				self.line = line.rstrip()
 
 				##ignore support layers
-				if line.startswith("; support"):
+				if line.startswith("; support") or line.startswith("; feature support") or line.startswith(";TYPE:SUPPORT"):
 					ignore = True
-				if line.startswith("; feature support"):
-					ignore = True
-				if line.startswith("; layer"):
+				if line.startswith("; layer") or line.startswith(";LAYER:") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER"): 
 					ignore = False
-				if line.startswith("; layer end"):
-					ignore = True
-
+				
 				if not ignore:
 					self.parseLine()
 
@@ -87,8 +83,7 @@ class GcodeParser:
 	def parse_G0(self, args):
 		# G0: Rapid move
 		# same as a controlled move for us (& reprap FW)
-		#self.parse_G1(args, "G0")
-		pass
+		self.parse_G1(args, "G0")
 		
 	def parse_G1(self, args, type="G1"):
 		# G1: Controlled move
