@@ -1,0 +1,221 @@
+#!/usr/bin/env python
+
+from numpy import pi, sin, cos, mgrid
+from gcodeParser import *
+from supportParser import *
+import sys, time, os
+from mayavi import mlab
+import numpy as np
+
+mx = []
+my = []
+mz = []
+sx = []
+sy = []
+sz = []
+
+'''
+scene.render_window.point_smoothing = True
+scene.render_window.line_smoothing = True
+scene.render_window.polygon_smoothing = True
+scene.render_window.multi_samples = 8
+'''
+
+def loadModel(path):
+	print "loading file %s ..."%repr(path)
+	t1 = time.time()
+	print
+	print "Parsing '%s'..."%path
+	print
+	parser = GcodeParser()
+	model = parser.parseFile(path)
+	print
+	print "Done! %s"%model
+	print
+	t2 = time.time()
+	print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
+	t1 = time.time()
+	for layer in model.layers:
+		for seg in layer.segments:
+			if seg.style == "extrude":
+				#print(seg)
+				#if(seg.extrudate > 0.5):
+				mx.append(seg.coords["X"])
+				my.append(seg.coords["Y"])
+				mz.append(seg.coords["Z"])
+			
+	t2 = time.time()
+	print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+
+if len(sys.argv) > 1:
+	path = sys.argv[1]
+else:
+	# get the real path to the script
+	script_path = os.path.realpath(__file__)
+	# get the containing folder
+	script_dir = os.path.dirname(script_path)
+	# default to hana
+	path = os.path.join(script_dir, "a.gcode")
+
+def loadSupport(path):
+	print "loading file %s ..."%repr(path)
+	t1 = time.time()
+	print
+	print "Parsing '%s'..."%path
+	print
+	parser = SupportParser()
+	model = parser.parseFile(path)
+	print
+	print "Done! %s"%model
+	print
+	t2 = time.time()
+	print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
+	t1 = time.time()
+	for layer in model.layers:
+		for seg in layer.segments:
+			sx.append(seg.coords["X"])
+			sy.append(seg.coords["Y"])
+			sz.append(seg.coords["Z"])
+			
+	t2 = time.time()
+	print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+
+if len(sys.argv) > 1:
+	path = sys.argv[1]
+else:
+	# get the real path to the script
+	script_path = os.path.realpath(__file__)
+	# get the containing folder
+	script_dir = os.path.dirname(script_path)
+	# default to hana
+	path = os.path.join(script_dir, "a.gcode")
+
+loadModel(path)
+loadSupport(path)
+
+# default to the middle layer
+#self.layerIdx = len(self.model.layers)-1
+
+
+
+black = (0,0,0)
+white = (1,1,1)
+fig1 = mlab.figure(bgcolor=white,size=(1024,768))
+fig1.scene.parallel_projection = True
+fig1.scene.render_window.point_smoothing = True
+fig1.scene.render_window.line_smoothing = True
+fig1.scene.render_window.polygon_smoothing = True
+fig1.scene.show_axes = True
+#visual.set_viewer(fig)
+
+'''
+axColor = (0.45,0.45,0.45)
+centerAxis = mlab.points3d(0.0, 0.0, 0.0, 4, mode='axes',color=axColor,
+                      line_width=1.0, scale_factor=1.,opacity=1.0)
+centerAxis.actor.property.lighting = False
+
+axes = mlab.axes(centerAxis, color = axColor, nb_labels=9)
+axes.property.display_location = 'background'
+axes.title_text_property.opacity = 0
+axes.label_text_property.bold = 0
+axax = axes.axes
+axax.label_format = '%-#6.2g'
+axax.fly_mode = 'none'
+axax.font_factor = 1.0
+
+def f(x, y):
+        sin, cos = np.sin, np.cos
+        return sin(0.1 + 0.1) + sin(0.1 + 0.1) + cos(0.1 * x + 0.1 * y)
+x, y = np.mgrid[0:200:0.1, 0.:200:0.05]
+mlab.surf(x, y, f)
+'''
+
+x1, y1, z1 = (0, 210, 1)  # | => pt1
+x2, y2, z2 = (210, 210, 1)  # | => pt2
+x3, y3, z3 = (0, 0, 1)  # | => pt3
+x4, y4, z4 = (210, 0, 1)  # | => pt4
+x5, y5, z5 = (0, 210, 0)  # | => pt5
+x6, y6, z6 = (210, 210, 0)  # | => pt6
+x7, y7, z7 = (0, 0, 0)  # | => pt7
+x8, y8, z8 = (210, 0, 0)  # | => pt8
+
+
+box_points = np.array([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3],
+                          [x4, y4, z4], [x5, y5, z5], [x6, y6, z6],
+                          [x7, y7, z7], [x8, y8, z8]])
+
+#mlab.points3d(box_points[:, 0], box_points[:, 1], box_points[:, 2], mode="axes", color=(1, 0, 0))
+
+mlab.mesh([[x1, x2],
+                  [x3, x4]],  # | => x coordinate
+
+                 [[y1, y2],
+                  [y3, y4]],  # | => y coordinate
+
+                 [[z1, z2],
+                  [z3, z4]],  # | => z coordinate
+
+                 color=(0, 0, 0))  # black
+mlab.mesh([[x5, x6], [x7, x8]],
+                 [[y5, y6], [y7, y8]],
+                 [[z5, z6], [z7, z8]],
+                 color=(0, 0, 0))  # black
+
+mlab.mesh([[x1, x3], [x5, x7]],
+                 [[y1, y3], [y5, y7]],
+                 [[z1, z3], [z5, z7]],
+                 color=(0, 0, 0))  # black
+
+mlab.mesh([[x1, x2], [x5, x6]],
+                 [[y1, y2], [y5, y6]],
+                 [[z1, z2], [z5, z6]],
+                 color=(0, 0, 0))  # black
+
+mlab.mesh([[x2, x4], [x6, x8]],
+                 [[y2, y4], [y6, y8]],
+                 [[z2, z4], [z6, z8]],
+                 color=(0, 0, 0))  # black
+
+mlab.mesh([[x3, x4], [x7, x8]],
+                 [[y3, y4], [y7, y8]],
+                 [[z3, z4], [z7, z8]],
+                 color=(0, 0, 0))  # black
+
+
+#mlab.view(azimuth=45, elevation=70, focalpoint=[0, 0, 0], distance=62.0, figure=fig)
+
+mlab.plot3d(mx, my, mz, color=(0.2, 0.2, 1), tube_radius=0.5)
+mlab.plot3d(sx, sy, sz, color=(0.58, 0.58, 0.58), tube_radius=0.5)
+#mlab.roll(-90)
+#mlab.view(45, 45)
+mlab.view(320, 70)
+mlab.view(distance=20)
+mlab.view(focalpoint=(90,0,40))
+
+mlab.show()
+
+
+
+'''
+import numpy as np
+from mayavi import mlab
+from matplotlib import pyplot as plt
+from matplotlib.widgets import Slider
+
+
+def slider_changed(val):
+    s.mlab_source.scalars = np.asarray(x * (val + 1), 'd')
+
+# mayavi 3d plot
+x, y = np.mgrid[0:3:1,0:3:1]
+s = mlab.surf(x, y, np.asarray(x*0.1, 'd'))
+
+# a matplotlib slider
+plt.figure()
+ax = plt.subplot(1, 1, 1)
+slider = Slider(ax, valmin=0., valmax=1., label='test')
+slider.on_changed(slider_changed)
+
+plt.show()
+mlab.show()
+'''
