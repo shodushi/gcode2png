@@ -21,6 +21,8 @@ extrudecolor = (0, 0.4980, 0.9960)
 bedcolor = (0.7, 0.7, 0.7)
 linecolor1 = (0.4509, 0.4509, 0.4509)
 linecolor2 = (0.5490, 0.5490, 0.5490)
+black = (0,0,0)
+white = (1,1,1)
 
 '''
 scene.render_window.point_smoothing = True
@@ -98,106 +100,84 @@ else:
 	# default to hana
 	path = os.path.join(script_dir, "a.gcode")
 
+def createScene():
+	fig1 = mlab.figure(bgcolor=white,size=(800,600))
+	fig1.scene.parallel_projection = False
+	fig1.scene.render_window.point_smoothing = True
+	fig1.scene.render_window.line_smoothing = True
+	fig1.scene.render_window.polygon_smoothing = True
+	fig1.scene.show_axes = False
+
 def createBed():
 
-	x1, y1, z1 = (0, 210, 1)  # | => pt1
-	x2, y2, z2 = (210, 210, 1)  # | => pt2
-	x3, y3, z3 = (0, 0, 1)  # | => pt3
-	x4, y4, z4 = (210, 0, 1)  # | => pt4
+	x1, y1, z1 = (0, 210, 0.1)  # | => pt1
+	x2, y2, z2 = (210, 210, 0.1)  # | => pt2
+	x3, y3, z3 = (0, 0, 0.1)  # | => pt3
+	x4, y4, z4 = (210, 0, 0.1)  # | => pt4
 	x5, y5, z5 = (0, 210, 0)  # | => pt5
 	x6, y6, z6 = (210, 210, 0)  # | => pt6
 	x7, y7, z7 = (0, 0, 0)  # | => pt7
 	x8, y8, z8 = (210, 0, 0)  # | => pt8
 
+	#bed
+	box_points = np.array([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3], [x4, y4, z4], [x5, y5, z5], [x6, y6, z6], [x7, y7, z7], [x8, y8, z8]])
+	mlab.mesh([[x1, x2], [x3, x4]], [[y1, y2], [y3, y4]], [[z1, z2], [z3, z4]], color=bedcolor)
+	mlab.mesh([[x5, x6], [x7, x8]], [[y5, y6], [y7, y8]], [[z5, z6], [z7, z8]], color=bedcolor)
+	mlab.mesh([[x1, x3], [x5, x7]], [[y1, y3], [y5, y7]], [[z1, z3], [z5, z7]], color=bedcolor)
+	mlab.mesh([[x1, x2], [x5, x6]], [[y1, y2], [y5, y6]], [[z1, z2], [z5, z6]], color=bedcolor)
+	mlab.mesh([[x2, x4], [x6, x8]], [[y2, y4], [y6, y8]], [[z2, z4], [z6, z8]], color=bedcolor)
+	mlab.mesh([[x3, x4], [x7, x8]], [[y3, y4], [y7, y8]], [[z3, z4], [z7, z8]], color=bedcolor)
 
-	box_points = np.array([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3],
-	                          [x4, y4, z4], [x5, y5, z5], [x6, y6, z6],
-	                          [x7, y7, z7], [x8, y8, z8]])
+def createLines():
+	for x in range(1, 10):
+		#lines x
+		mlab.plot3d([ (bedsize[0]/10)*x,(bedsize[0]/10)*x ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.01)
+		#lines y
+		mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*x,(bedsize[1]/10)*x], [1,1], color=linecolor1, line_width=0.01)
+	#for x in range(1, 49):
+		#lines x
+	#	mlab.plot3d([ (bedsize[0]/50)*x,(bedsize[0]/50)*x ], [0,bedsize[0]], [1,1], color=linecolor2, line_width=0.01)
+		#lines y
+	#	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/50)*x,(bedsize[1]/50)*x], [1,1], color=linecolor2, line_width=0.01)
 
-	#mlab.points3d(box_points[:, 0], box_points[:, 1], box_points[:, 2], mode="axes", color=(1, 0, 0))
+def plotModel():
+	mlab.plot3d(mx, my, mz, color=extrudecolor, line_width=0.9, representation='wireframe')
 
-	mlab.mesh([[x1, x2],
-	                  [x3, x4]],  # | => x coordinate
-
-	                 [[y1, y2],
-	                  [y3, y4]],  # | => y coordinate
-
-	                 [[z1, z2],
-	                  [z3, z4]],  # | => z coordinate
-
-	                 color=bedcolor)  # black
-	mlab.mesh([[x5, x6], [x7, x8]],
-	                 [[y5, y6], [y7, y8]],
-	                 [[z5, z6], [z7, z8]],
-	                 color=bedcolor)  # black
-
-	mlab.mesh([[x1, x3], [x5, x7]],
-	                 [[y1, y3], [y5, y7]],
-	                 [[z1, z3], [z5, z7]],
-	                 color=bedcolor)  # black
-
-	mlab.mesh([[x1, x2], [x5, x6]],
-	                 [[y1, y2], [y5, y6]],
-	                 [[z1, z2], [z5, z6]],
-	                 color=bedcolor)  # black
-
-	mlab.mesh([[x2, x4], [x6, x8]],
-	                 [[y2, y4], [y6, y8]],
-	                 [[z2, z4], [z6, z8]],
-	                 color=bedcolor)  # black
-
-	mlab.mesh([[x3, x4], [x7, x8]],
-	                 [[y3, y4], [y7, y8]],
-	                 [[z3, z4], [z7, z8]],
-	                 color=bedcolor)  # black
+def plotSupport():
+	mlab.plot3d(sx, sy, sz, color=supportcolor, tube_radius=0.5)
 
 
-	mlab.plot3d([bedsize[0]/10,bedsize[0]/10], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([ (bedsize[0]/10)*2,(bedsize[0]/10)*2 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*3,(bedsize[0]/10)*3 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*4,(bedsize[0]/10)*4 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*5,(bedsize[0]/10)*5 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*6,(bedsize[0]/10)*6 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*7,(bedsize[0]/10)*7 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*8,(bedsize[0]/10)*8 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([(bedsize[0]/10)*9,(bedsize[0]/10)*9 ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.1)
-
-	mlab.plot3d([0,bedsize[1]], [bedsize[1]/10,bedsize[1]/10], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*2,(bedsize[1]/10)*2], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*3,(bedsize[1]/10)*3], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*4,(bedsize[1]/10)*4], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*5,(bedsize[1]/10)*5], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*6,(bedsize[1]/10)*6], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*7,(bedsize[1]/10)*7], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*8,(bedsize[1]/10)*8], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*9,(bedsize[1]/10)*9], [1,1], color=linecolor1, line_width=0.1)
-
-	'''
-	mlab.plot3d([50,50], [0,210], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([100,100], [0,210], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([150,150], [0,210], [1,1], color=linecolor1, line_width=0.1)
-
-	mlab.plot3d([0,210], [50,50], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,210], [100,100], [1,1], color=linecolor1, line_width=0.1)
-	mlab.plot3d([0,210], [150,150], [1,1], color=linecolor1, line_width=0.1)
-	'''
+createScene()
+createBed()
+#createLines()
 
 loadModel(path)
 loadSupport(path)
-
-# default to the middle layer
-#self.layerIdx = len(self.model.layers)-1
-
+plotModel()
+plotSupport()
 
 
-black = (0,0,0)
-white = (1,1,1)
-fig1 = mlab.figure(bgcolor=white,size=(800,600))
-fig1.scene.parallel_projection = False
-fig1.scene.render_window.point_smoothing = True
-fig1.scene.render_window.line_smoothing = True
-fig1.scene.render_window.polygon_smoothing = True
-fig1.scene.show_axes = False
+#mlab.view(azimuth=45, elevation=70, focalpoint=[0, 0, 0], distance=62.0, figure=fig)
+#																	tube_radius=0.2, tube_sides=4
+
+
+#mlab.roll(-90)
+#mlab.view(45, 45)
+
+mlab.view(320, 70)
+mlab.view(distance=20)
+mlab.view(focalpoint=(90,100,40))
+
+#mlab.show()
+filename = sys.argv[1].replace("gcode", "png")
+img_path = "./"+filename
+mlab.savefig(img_path, magnification=3)
+mlab.close()
+quit()
+
+
+
+
 #visual.set_viewer(fig)
 
 '''
@@ -223,19 +203,8 @@ mlab.surf(x, y, f)
 '''
 
 
-createBed()
 
-#mlab.view(azimuth=45, elevation=70, focalpoint=[0, 0, 0], distance=62.0, figure=fig)
-#																	tube_radius=0.2, tube_sides=4
-mlab.plot3d(mx, my, mz, color=extrudecolor, line_width=0.9, representation='wireframe')
-mlab.plot3d(sx, sy, sz, color=supportcolor, tube_radius=0.5)
-#mlab.roll(-90)
-#mlab.view(45, 45)
-mlab.view(320, 70)
-mlab.view(distance=20)
-mlab.view(focalpoint=(90,100,40))
 
-mlab.show()
 
 
 
