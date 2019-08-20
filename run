@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 
 from numpy import pi, sin, cos, mgrid
-from gcodeParser import *
+from gcodeAllParser import *
 from supportParser import *
 import sys, time, os
 from mayavi import mlab
 import numpy as np
 
-mx = []
-my = []
-mz = []
-sx = []
-sy = []
-sz = []
+object_x = []
+object_y = []
+object_z = []
+moves_x = []
+moves_y = []
+moves_z = []
+support_x = []
+support_y = []
+support_z = []
 
 bedsize = [210, 210]
 
@@ -32,63 +35,30 @@ scene.render_window.multi_samples = 8
 '''
 
 def loadModel(path):
-	print "loading file %s ..."%repr(path)
-	t1 = time.time()
-	print
-	print "Parsing '%s'..."%path
-	print
+	#print "loading file %s ..."%repr(path)
 	parser = GcodeParser()
 	model = parser.parseFile(path)
-	print
-	print "Done! %s"%model
-	print
-	t2 = time.time()
-	print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
-	t1 = time.time()
-	for layer in model.layers:
+
+	for layer in model['object'].layers:
 		for seg in layer.segments:
+			#if seg.extrude > 0 and seg.distance > 0:
+				#if seg.extrude/seg.distance > 1:
 			if seg.style == "extrude":
-				#print(seg)
 				#if(seg.extrudate > 0.5):
-				mx.append(seg.coords["X"])
-				my.append(seg.coords["Y"])
-				mz.append(seg.coords["Z"])
-			
-	t2 = time.time()
-	print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
-
-if len(sys.argv) > 1:
-	path = sys.argv[1]
-else:
-	# get the real path to the script
-	script_path = os.path.realpath(__file__)
-	# get the containing folder
-	script_dir = os.path.dirname(script_path)
-	# default to hana
-	path = os.path.join(script_dir, "a.gcode")
-
-def loadSupport(path):
-	print "loading file %s ..."%repr(path)
-	t1 = time.time()
-	print
-	print "Parsing '%s'..."%path
-	print
-	parser = SupportParser()
-	model = parser.parseFile(path)
-	print
-	print "Done! %s"%model
-	print
-	t2 = time.time()
-	print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
-	t1 = time.time()
-	for layer in model.layers:
+				#print(seg.extrude/seg.distance)
+				object_x.append(seg.coords["X"])
+				object_y.append(seg.coords["Y"])
+				object_z.append(seg.coords["Z"])
+			else:
+				moves_x.append(seg.coords["X"])
+				moves_y.append(seg.coords["Y"])
+				moves_z.append(seg.coords["Z"])
+	for layer in model['support'].layers:
 		for seg in layer.segments:
-			sx.append(seg.coords["X"])
-			sy.append(seg.coords["Y"])
-			sz.append(seg.coords["Z"])
+			support_x.append(seg.coords["X"])
+			support_y.append(seg.coords["Y"])
+			support_z.append(seg.coords["Z"])
 			
-	t2 = time.time()
-	print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
 
 if len(sys.argv) > 1:
 	path = sys.argv[1]
@@ -99,17 +69,17 @@ else:
 	script_dir = os.path.dirname(script_path)
 	# default to hana
 	path = os.path.join(script_dir, "a.gcode")
+
 
 def createScene():
 	fig1 = mlab.figure(bgcolor=white,size=(800,600))
 	fig1.scene.parallel_projection = False
-	fig1.scene.render_window.point_smoothing = True
-	fig1.scene.render_window.line_smoothing = True
-	fig1.scene.render_window.polygon_smoothing = True
+	fig1.scene.render_window.point_smoothing = False
+	fig1.scene.render_window.line_smoothing = False
+	fig1.scene.render_window.polygon_smoothing = False
 	fig1.scene.show_axes = False
 
 def createBed():
-
 	x1, y1, z1 = (0, 210, 0.1)  # | => pt1
 	x2, y2, z2 = (210, 210, 0.1)  # | => pt2
 	x3, y3, z3 = (0, 0, 0.1)  # | => pt3
@@ -141,10 +111,11 @@ def createLines():
 	#	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/50)*x,(bedsize[1]/50)*x], [1,1], color=linecolor2, line_width=0.01)
 
 def plotModel():
-	mlab.plot3d(mx, my, mz, color=extrudecolor, line_width=0.9, representation='wireframe')
+	mlab.plot3d(object_x, object_y, object_z, color=extrudecolor, line_width=0.9, representation='wireframe')
+	mlab.plot3d(moves_x, moves_y, moves_z, color=(1,0,0), line_width=0.9, representation='wireframe')
 
 def plotSupport():
-	mlab.plot3d(sx, sy, sz, color=supportcolor, tube_radius=0.5)
+	mlab.plot3d(support_x, support_y, support_z, color=supportcolor, tube_radius=0.5)
 
 
 createScene()
@@ -152,7 +123,7 @@ createBed()
 #createLines()
 
 loadModel(path)
-loadSupport(path)
+#loadSupport(path)
 plotModel()
 plotSupport()
 
@@ -168,13 +139,14 @@ mlab.view(320, 70)
 mlab.view(distance=20)
 mlab.view(focalpoint=(90,100,40))
 
-#mlab.show()
+mlab.show()
+'''
 filename = sys.argv[1].replace("gcode", "png")
-img_path = "./"+filename
+img_path = "./img/"+filename
 mlab.savefig(img_path, magnification=3)
 mlab.close()
 quit()
-
+'''
 
 
 

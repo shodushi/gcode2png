@@ -26,9 +26,9 @@ class SupportParser:
 				self.line = line.rstrip()
 
 				##ignore support layers
-				if line.startswith("; support") or line.startswith("; feature support") or line.startswith(";TYPE:SUPPORT"):
+				if line.startswith("; support") or line.startswith(";LAYER:") or line.startswith("; feature support") or line.startswith(";TYPE:SUPPORT") or line.startswith(";LAYER:-") or line.startswith(";LAYER:0"):
 					ignore = False
-				if line.startswith("; layer") or line.startswith(";LAYER:") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER"): 
+				elif line.startswith("; layer") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER") or line.startswith(";TYPE:SKIN"): 
 					ignore = True
 
 				if not ignore:

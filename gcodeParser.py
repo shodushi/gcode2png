@@ -23,11 +23,16 @@ class GcodeParser:
 				self.line = line.rstrip()
 
 				##ignore support layers
-				if line.startswith("; support") or line.startswith("; feature support") or line.startswith(";TYPE:SUPPORT"):
+				if line.startswith("; support") or line.startswith("; feature support") or line.startswith(";TYPE:SUPPORT") or line.startswith(";LAYER:-") or line.startswith(";LAYER:0"):
 					ignore = True
-				if line.startswith("; layer") or line.startswith(";LAYER:") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER"): 
+				elif line.startswith("; layer") or line.startswith(";LAYER:") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER"): 
 					ignore = False
-				
+
+				#if "X" in line and "Y" in line and "F" in line and "E" not in line:
+
+				#if line.startswith("G1 E-"):
+				#	ignore = True
+
 				if not ignore:
 					self.parseLine()
 
@@ -84,6 +89,7 @@ class GcodeParser:
 		# G0: Rapid move
 		# same as a controlled move for us (& reprap FW)
 		self.parse_G1(args, "G0")
+		#self.model.do_G0(self.parseArgs(args), type)
 		
 	def parse_G1(self, args, type="G1"):
 		# G1: Controlled move
@@ -180,8 +186,8 @@ class GcodeModel:
 		self.distance = None
 		self.extrudate = None
 		self.bbox = None
-	
-	def do_G1(self, args, type):
+
+	def do_G0(self, args, type):
 		# G0/G1: Rapid/Controlled move
 		# clone previous coords
 		coords = dict(self.relative)
@@ -209,6 +215,39 @@ class GcodeModel:
 			self.parser.line)
 		self.addSegment(seg)
 		# update model coords
+		self.relative = coords
+	
+	def do_G1(self, args, type):
+		# G0/G1: Rapid/Controlled move
+		# clone previous coords
+		coords = dict(self.relative)
+		# update changed coords
+		for axis in args.keys():
+			if coords.has_key(axis):
+				if self.isRelative:
+					coords[axis] += args[axis]
+				else:
+					coords[axis] = args[axis]
+			else:
+				self.warn("Unknown axis '%s'"%axis)
+		# build segment
+		absolute = {
+			"X": self.offset["X"] + coords["X"],
+			"Y": self.offset["Y"] + coords["Y"],
+			"Z": self.offset["Z"] + coords["Z"],
+			"F": coords["F"],	# no feedrate offset
+			"E": self.offset["E"] + coords["E"],
+			"EE": coords["E"]
+		}
+		
+		seg = Segment(
+			type,
+			absolute,
+			self.parser.lineNb,
+			self.parser.line)
+		self.addSegment(seg)
+			# update model coords
+		
 		self.relative = coords
 		
 	def do_G28(self, args):
@@ -254,7 +293,8 @@ class GcodeModel:
 			"Y":0.0,
 			"Z":0.0,
 			"F":0.0,
-			"E":0.0}
+			"E":0.0,
+			"EE":0.0}
 			
 		# first layer at Z=0
 		currentLayerIdx = 0
@@ -265,12 +305,13 @@ class GcodeModel:
 			style = "fly"
 			
 			# no horizontal movement, but extruder movement: retraction/refill
+
 			if (
 				(seg.coords["X"] == coords["X"]) and
 				(seg.coords["Y"] == coords["Y"]) and
 				(seg.coords["E"] != coords["E"]) ):
 					style = "retract" if (seg.coords["E"] < coords["E"]) else "restore"
-			
+
 			# some horizontal movement, and positive extruder movement: extrusion
 			if (
 				( (seg.coords["X"] != coords["X"]) or (seg.coords["Y"] != coords["Y"]) ) and
@@ -283,10 +324,11 @@ class GcodeModel:
 				(seg.coords["Z"] != currentLayerZ) ):
 				currentLayerZ = seg.coords["Z"]
 				currentLayerIdx += 1
-			
+
 			# set style and layer in segment
 			seg.style = style
 			seg.layerIdx = currentLayerIdx
+			seg.extrude = seg.coords["EE"]
 			
 			
 			#print coords
@@ -307,7 +349,8 @@ class GcodeModel:
 			"Y":0.0,
 			"Z":0.0,
 			"F":0.0,
-			"E":0.0}
+			"E":0.0,
+			"EE":0.0}
 			
 		# init layer store
 		self.layers = []
@@ -334,6 +377,7 @@ class GcodeModel:
 		# init distances and extrudate
 		self.distance = 0
 		self.extrudate = 0
+		self.extrude = 0
 		
 		# init model bbox
 		self.bbox = None
@@ -365,9 +409,9 @@ class GcodeModel:
 				d += (seg.coords["Y"]-coords["Y"])**2
 				d += (seg.coords["Z"]-coords["Z"])**2
 				seg.distance = math.sqrt(d)
-				
 				# calc extrudate
 				seg.extrudate = (seg.coords["E"]-coords["E"])
+				seg.extrude = coords["EE"]
 				
 				# accumulate layer metrics
 				layer.distance += seg.distance
@@ -389,7 +433,7 @@ class GcodeModel:
 		self.calcMetrics()
 
 	def __str__(self):
-		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox)
+		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s, extrude=%f>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox, self.extrude)
 	
 class Segment:
 	def __init__(self, type, coords, lineNb, line):
@@ -401,8 +445,9 @@ class Segment:
 		self.layerIdx = None
 		self.distance = None
 		self.extrudate = None
+		self.extrude = None
 	def __str__(self):
-		return "<Segment: type=%s, lineNb=%d, style=%s, layerIdx=%d, distance=%f, extrudate=%f>"%(self.type, self.lineNb, self.style, self.layerIdx, self.distance, self.extrudate)
+		return "<Segment: type=%s, lineNb=%d, style=%s, layerIdx=%d, distance=%f, extrudate=%f, extrude=%f>"%(self.type, self.lineNb, self.style, self.layerIdx, self.distance, self.extrudate, self.extrude)
 		
 class Layer:
 	def __init__(self, Z):
