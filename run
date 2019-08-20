@@ -1,158 +1,190 @@
 #!/usr/bin/env python
 
 from numpy import pi, sin, cos, mgrid
-from gcodeAllParser import *
-from supportParser import *
+from gcodeParser import *
 import sys, time, os
 from mayavi import mlab
 import numpy as np
+from tvtk.api import tvtk
 
-object_x = []
-object_y = []
-object_z = []
-moves_x = []
-moves_y = []
-moves_z = []
-support_x = []
-support_y = []
-support_z = []
+class GcodeRenderer:
 
-bedsize = [210, 210]
+	def __init__(self):
+		self.path=""
+		self.support = ""
+		self.moves = ""
 
-supportcolor = (0.7529, 0.7529, 0.7529)
-extrudecolor = (0, 0.4980, 0.9960)
-bedcolor = (0.7, 0.7, 0.7)
-linecolor1 = (0.4509, 0.4509, 0.4509)
-linecolor2 = (0.5490, 0.5490, 0.5490)
-black = (0,0,0)
-white = (1,1,1)
+		self.object_x = []
+		self.object_y = []
+		self.object_z = []
+		self.moves_x = []
+		self.moves_y = []
+		self.moves_z = []
+		self.support_x = []
+		self.support_y = []
+		self.support_z = []
 
-'''
-scene.render_window.point_smoothing = True
-scene.render_window.line_smoothing = True
-scene.render_window.polygon_smoothing = True
-scene.render_window.multi_samples = 8
-'''
-
-def loadModel(path):
-	#print "loading file %s ..."%repr(path)
-	parser = GcodeParser()
-	model = parser.parseFile(path)
-
-	for layer in model['object'].layers:
-		for seg in layer.segments:
-			#if seg.extrude > 0 and seg.distance > 0:
-				#if seg.extrude/seg.distance > 1:
-			if seg.style == "extrude":
-				#if(seg.extrudate > 0.5):
-				#print(seg.extrude/seg.distance)
-				object_x.append(seg.coords["X"])
-				object_y.append(seg.coords["Y"])
-				object_z.append(seg.coords["Z"])
-			else:
-				moves_x.append(seg.coords["X"])
-				moves_y.append(seg.coords["Y"])
-				moves_z.append(seg.coords["Z"])
-	for layer in model['support'].layers:
-		for seg in layer.segments:
-			support_x.append(seg.coords["X"])
-			support_y.append(seg.coords["Y"])
-			support_z.append(seg.coords["Z"])
-			
-
-if len(sys.argv) > 1:
-	path = sys.argv[1]
-else:
-	# get the real path to the script
-	script_path = os.path.realpath(__file__)
-	# get the containing folder
-	script_dir = os.path.dirname(script_path)
-	# default to hana
-	path = os.path.join(script_dir, "a.gcode")
+		self.bedsize = [210, 210]
+		black = (0, 0, 0)
+		white = (1, 1, 1)
+		red = (1, 0, 0)
+		lightgrey = (0.7529, 0.7529, 0.7529)
+		blue = (0, 0.4980, 0.9960)
+		mediumgrey = (0.7, 0.7, 0.7)
+		darkgrey1 = (0.4509, 0.4509, 0.4509)
+		darkgrey2 = (0.5490, 0.5490, 0.5490)
 
 
-def createScene():
-	fig1 = mlab.figure(bgcolor=white,size=(800,600))
-	fig1.scene.parallel_projection = False
-	fig1.scene.render_window.point_smoothing = False
-	fig1.scene.render_window.line_smoothing = False
-	fig1.scene.render_window.polygon_smoothing = False
-	fig1.scene.show_axes = False
-
-def createBed():
-	x1, y1, z1 = (0, 210, 0.1)  # | => pt1
-	x2, y2, z2 = (210, 210, 0.1)  # | => pt2
-	x3, y3, z3 = (0, 0, 0.1)  # | => pt3
-	x4, y4, z4 = (210, 0, 0.1)  # | => pt4
-	x5, y5, z5 = (0, 210, 0)  # | => pt5
-	x6, y6, z6 = (210, 210, 0)  # | => pt6
-	x7, y7, z7 = (0, 0, 0)  # | => pt7
-	x8, y8, z8 = (210, 0, 0)  # | => pt8
-
-	#bed
-	box_points = np.array([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3], [x4, y4, z4], [x5, y5, z5], [x6, y6, z6], [x7, y7, z7], [x8, y8, z8]])
-	mlab.mesh([[x1, x2], [x3, x4]], [[y1, y2], [y3, y4]], [[z1, z2], [z3, z4]], color=bedcolor)
-	mlab.mesh([[x5, x6], [x7, x8]], [[y5, y6], [y7, y8]], [[z5, z6], [z7, z8]], color=bedcolor)
-	mlab.mesh([[x1, x3], [x5, x7]], [[y1, y3], [y5, y7]], [[z1, z3], [z5, z7]], color=bedcolor)
-	mlab.mesh([[x1, x2], [x5, x6]], [[y1, y2], [y5, y6]], [[z1, z2], [z5, z6]], color=bedcolor)
-	mlab.mesh([[x2, x4], [x6, x8]], [[y2, y4], [y6, y8]], [[z2, z4], [z6, z8]], color=bedcolor)
-	mlab.mesh([[x3, x4], [x7, x8]], [[y3, y4], [y7, y8]], [[z3, z4], [z7, z8]], color=bedcolor)
-
-def createLines():
-	for x in range(1, 10):
-		#lines x
-		mlab.plot3d([ (bedsize[0]/10)*x,(bedsize[0]/10)*x ], [0,bedsize[0]], [1,1], color=linecolor1, line_width=0.01)
-		#lines y
-		mlab.plot3d([0,bedsize[1]], [(bedsize[1]/10)*x,(bedsize[1]/10)*x], [1,1], color=linecolor1, line_width=0.01)
-	#for x in range(1, 49):
-		#lines x
-	#	mlab.plot3d([ (bedsize[0]/50)*x,(bedsize[0]/50)*x ], [0,bedsize[0]], [1,1], color=linecolor2, line_width=0.01)
-		#lines y
-	#	mlab.plot3d([0,bedsize[1]], [(bedsize[1]/50)*x,(bedsize[1]/50)*x], [1,1], color=linecolor2, line_width=0.01)
-
-def plotModel():
-	mlab.plot3d(object_x, object_y, object_z, color=extrudecolor, line_width=0.9, representation='wireframe')
-	mlab.plot3d(moves_x, moves_y, moves_z, color=(1,0,0), line_width=0.9, representation='wireframe')
-
-def plotSupport():
-	mlab.plot3d(support_x, support_y, support_z, color=supportcolor, tube_radius=0.5)
+		self.supportcolor = lightgrey
+		self.extrudecolor = blue
+		self.bedcolor = mediumgrey
+		self.linecolor1 = darkgrey1
+		self.linecolor2 = darkgrey2
+		self.movecolor = red
 
 
-createScene()
-createBed()
-#createLines()
+	def run(self, path, support, moves):
+		self.path = path
+		self.support = support
+		self.moves = moves
+		self.createScene()
+		self.createScene()
+		self.createBed()
 
-loadModel(path)
-#loadSupport(path)
-plotModel()
-plotSupport()
+		self.loadModel(self.path)
+		self.plotModel()
+		self.plotSupport()
+		#self.showScene()
+		self.save()
 
 
-#mlab.view(azimuth=45, elevation=70, focalpoint=[0, 0, 0], distance=62.0, figure=fig)
-#																	tube_radius=0.2, tube_sides=4
+	def loadModel(self, path):
+		#print "loading file %s ..."%repr(path)
+		parser = GcodeParser()
+		model = parser.parseFile(path)
+
+		for layer in model['object'].layers:
+			for seg in layer.segments:
+				#if seg.extrude > 0 and seg.distance > 0:
+					#if seg.extrude/seg.distance > 1:
+				if seg.style == "extrude":
+					#if(seg.extrudate > 0.5):
+					#print(seg.extrude/seg.distance)
+					self.object_x.append(seg.coords["X"])
+					self.object_y.append(seg.coords["Y"])
+					self.object_z.append(seg.coords["Z"])
+				
+				if self.moves == "true":
+					if seg.style == "fly":
+						self.moves_x.append(seg.coords["X"])
+						self.moves_y.append(seg.coords["Y"])
+						self.moves_z.append(seg.coords["Z"])
+		if self.support == "true":
+			for layer in model['support'].layers:
+				for seg in layer.segments:
+					self.support_x.append(seg.coords["X"])
+					self.support_y.append(seg.coords["Y"])
+					self.support_z.append(seg.coords["Z"])
+
+	def createScene(self):
+		fig1 = mlab.figure(bgcolor=(1,1,1),size=(800,600))
+		fig1.scene.parallel_projection = False
+		fig1.scene.render_window.point_smoothing = False
+		fig1.scene.render_window.line_smoothing = False
+		fig1.scene.render_window.polygon_smoothing = False
+		fig1.scene.render_window.multi_samples = 8
+		fig1.scene.show_axes = False
+
+	def createBed(self):
+		x1, y1, z1 = (0, 210, 0.1)  # | => pt1
+		x2, y2, z2 = (210, 210, 0.1)  # | => pt2
+		x3, y3, z3 = (0, 0, 0.1)  # | => pt3
+		x4, y4, z4 = (210, 0, 0.1)  # | => pt4
+		x5, y5, z5 = (0, 210, 0)  # | => pt5
+		x6, y6, z6 = (210, 210, 0)  # | => pt6
+		x7, y7, z7 = (0, 0, 0)  # | => pt7
+		x8, y8, z8 = (210, 0, 0)  # | => pt8
+
+		#bed
+		box_points = np.array([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3], [x4, y4, z4], [x5, y5, z5], [x6, y6, z6], [x7, y7, z7], [x8, y8, z8]])
+
+		meshtop = mlab.mesh([[x1, x2], [x3, x4]], [[y1, y2], [y3, y4]], [[z1, z2], [z3, z4]], color=self.bedcolor)
+		mlab.mesh([[x5, x6], [x7, x8]], [[y5, y6], [y7, y8]], [[z5, z6], [z7, z8]], color=self.bedcolor)
+		mlab.mesh([[x1, x3], [x5, x7]], [[y1, y3], [y5, y7]], [[z1, z3], [z5, z7]], color=self.bedcolor)
+		mlab.mesh([[x1, x2], [x5, x6]], [[y1, y2], [y5, y6]], [[z1, z2], [z5, z6]], color=self.bedcolor)
+		mlab.mesh([[x2, x4], [x6, x8]], [[y2, y4], [y6, y8]], [[z2, z4], [z6, z8]], color=self.bedcolor)
+		mlab.mesh([[x3, x4], [x7, x8]], [[y3, y4], [y7, y8]], [[z3, z4], [z7, z8]], color=self.bedcolor)
+
+		img = tvtk.JPEGReader(file_name="./bed_texture.jpg")
+		texture = tvtk.Texture(input_connection=img.output_port, interpolate=1, repeat=0)
+		meshtop.actor.actor.texture = texture
+		meshtop.actor.tcoord_generator_mode = 'plane'
 
 
-#mlab.roll(-90)
-#mlab.view(45, 45)
+	def plotModel(self):
+		mlab.plot3d(self.object_x, self.object_y, self.object_z, color=self.extrudecolor, line_width=2.0, representation='wireframe')
+		if len(self.moves_x) > 0:
+			mlab.plot3d(self.moves_x, self.moves_y, self.moves_z, color=self.movecolor, line_width=2.0, representation='wireframe')
 
-mlab.view(320, 70)
-mlab.view(distance=20)
-mlab.view(focalpoint=(90,100,40))
+	def plotSupport(self):
+		if len(self.support_x) > 0:
+			mlab.plot3d(self.support_x, self.support_y, self.support_z, color=self.supportcolor, tube_radius=0.5)
 
-mlab.show()
+
+	
+
+
+	#mlab.view(azimuth=45, elevation=70, focalpoint=[0, 0, 0], distance=62.0, figure=fig)
+	#																	tube_radius=0.2, tube_sides=4
+
+
+	#mlab.roll(-90)
+	#mlab.view(45, 45)
+
+	def showScene(self):
+		mlab.view(320, 70)
+		mlab.view(distance=20)
+		mlab.view(focalpoint=(90,100,40))
+		mlab.show()
+
+	def save(self):
+		mlab.view(320, 70)
+		mlab.view(distance=20)
+		mlab.view(focalpoint=(90,100,40))
+		filename = sys.argv[1].replace("gcode", "png")
+		img_path = "./img/"+filename
+		mlab.savefig(img_path, magnification=3)
+		mlab.close()
+		quit()
+
+
+if __name__ == '__main__':
+	support = "true"
+	moves = "false"
+	if len(sys.argv) > 3:
+		path = sys.argv[1]
+		support = sys.argv[2]
+		moves = sys.argv[3]
+	elif len(sys.argv) > 1:
+		path = sys.argv[1]
+	else:
+		script_path = os.path.realpath(__file__)
+		script_dir = os.path.dirname(script_path)
+		path = os.path.join(script_dir, "test.gcode")
+		
+
+	renderer = GcodeRenderer()
+	renderer.run(path, support, moves)
+
 '''
 filename = sys.argv[1].replace("gcode", "png")
 img_path = "./img/"+filename
 mlab.savefig(img_path, magnification=3)
 mlab.close()
 quit()
-'''
 
+visual.set_viewer(fig)
 
-
-#visual.set_viewer(fig)
-
-'''
 axColor = (0.45,0.45,0.45)
 centerAxis = mlab.points3d(0.0, 0.0, 0.0, 4, mode='axes',color=axColor,
                       line_width=1.0, scale_factor=1.,opacity=1.0)
@@ -166,40 +198,4 @@ axax = axes.axes
 axax.label_format = '%-#6.2g'
 axax.fly_mode = 'none'
 axax.font_factor = 1.0
-
-def f(x, y):
-        sin, cos = np.sin, np.cos
-        return sin(0.1 + 0.1) + sin(0.1 + 0.1) + cos(0.1 * x + 0.1 * y)
-x, y = np.mgrid[0:200:0.1, 0.:200:0.05]
-mlab.surf(x, y, f)
-'''
-
-
-
-
-
-
-
-'''
-import numpy as np
-from mayavi import mlab
-from matplotlib import pyplot as plt
-from matplotlib.widgets import Slider
-
-
-def slider_changed(val):
-    s.mlab_source.scalars = np.asarray(x * (val + 1), 'd')
-
-# mayavi 3d plot
-x, y = np.mgrid[0:3:1,0:3:1]
-s = mlab.surf(x, y, np.asarray(x*0.1, 'd'))
-
-# a matplotlib slider
-plt.figure()
-ax = plt.subplot(1, 1, 1)
-slider = Slider(ax, valmin=0., valmax=1., label='test')
-slider.on_changed(slider_changed)
-
-plt.show()
-mlab.show()
 '''

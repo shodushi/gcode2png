@@ -6,16 +6,17 @@ import re
 class GcodeParser:
 	
 	def __init__(self):
-		self.model = GcodeModel(self)
+		self.model = {}
+		self.model['object'] = GcodeModel(self)
+		self.model['support'] = GcodeModel(self)
+		self.category = 'object'
 		
 	def parseFile(self, path):
-		# read the gcode file
 		with open(path, 'r') as f:
 			# init line counter
 			self.lineNb = 0
-			# for all lines
-			ignore = False
 
+			ignore = False
 			for line in f:
 				# inc line counter
 				self.lineNb += 1
@@ -24,24 +25,18 @@ class GcodeParser:
 
 				##ignore support layers
 				if line.startswith("; support") or line.startswith("; feature support") or line.startswith(";TYPE:SUPPORT") or line.startswith(";LAYER:-") or line.startswith(";LAYER:0"):
-					ignore = True
+					self.category = 'support'
 				elif line.startswith("; layer") or line.startswith(";LAYER:") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER"): 
-					ignore = False
+					self.category = 'object'
 
 				#if "X" in line and "Y" in line and "F" in line and "E" not in line:
-
 				#if line.startswith("G1 E-"):
 				#	ignore = True
 
-				if not ignore:
-					self.parseLine()
-
-				
-				#; support.*^;
-				# parse a line
-				#self.parseLine()
+				self.parseLine()
 			
-		self.model.postProcess()
+		self.model['object'].postProcess()
+		self.model['support'].postProcess()
 		return self.model
 		
 	def parseLine(self):
@@ -93,7 +88,7 @@ class GcodeParser:
 		
 	def parse_G1(self, args, type="G1"):
 		# G1: Controlled move
-		self.model.do_G1(self.parseArgs(args), type)
+		self.model[self.category].do_G1(self.parseArgs(args), type)
 		
 	def parse_G20(self, args):
 		# G20: Set Units to Inches
@@ -106,19 +101,19 @@ class GcodeParser:
 		
 	def parse_G28(self, args):
 		# G28: Move to Origin
-		self.model.do_G28(self.parseArgs(args))
+		self.model[self.category].do_G28(self.parseArgs(args))
 		
 	def parse_G90(self, args):
 		# G90: Set to Absolute Positioning
-		self.model.setRelative(False)
+		self.model[self.category].setRelative(False)
 		
 	def parse_G91(self, args):
 		# G91: Set to Relative Positioning
-		self.model.setRelative(True)
+		self.model[self.category].setRelative(True)
 		
 	def parse_G92(self, args):
 		# G92: Set Position
-		self.model.do_G92(self.parseArgs(args))
+		self.model[self.category].do_G92(self.parseArgs(args))
 		
 	def warn(self, msg):
 		print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
