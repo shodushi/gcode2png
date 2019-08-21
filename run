@@ -10,12 +10,13 @@ from tvtk.api import tvtk
 class GcodeRenderer:
 
 	def __init__(self):
-		self.imgwidth= 800
-		self.imgheight = 600
+		self.imgwidth= 1024
+		self.imgheight = 768
 
 		self.path=""
 		self.support = ""
 		self.moves = ""
+		self.show = ""
 
 		self.coords = {}
 		self.coords['object'] = {}
@@ -41,7 +42,6 @@ class GcodeRenderer:
 		darkgrey1 = (0.4509, 0.4509, 0.4509)
 		darkgrey2 = (0.5490, 0.5490, 0.5490)
 
-
 		self.supportcolor = lightgrey
 		self.extrudecolor = blue
 		self.bedcolor = mediumgrey
@@ -50,7 +50,7 @@ class GcodeRenderer:
 		self.movecolor = red
 
 
-	def run(self, path, support, moves):
+	def run(self, path, support, moves, show):
 		self.path = path
 		self.support = support
 		self.moves = moves
@@ -59,8 +59,11 @@ class GcodeRenderer:
 		self.loadModel(self.path)
 		self.plotModel()
 		self.plotSupport()
-		self.showScene()
-		#self.save()
+
+		if show == "true":
+			self.showScene()
+		else:
+			self.save()
 
 
 	def loadModel(self, path):
@@ -138,51 +141,28 @@ class GcodeRenderer:
 		mlab.view(320, 70)
 		mlab.view(distance=20)
 		mlab.view(focalpoint=(self.bedsize[0]/2,self.bedsize[1]/2,20))
-		filename = sys.argv[1].replace("gcode", "png")
-		img_path = "./img/"+filename
+		filename = self.path.replace("gcode", "png")
+		img_path = "./"+filename
 		mlab.savefig(img_path, magnification=3)
 		mlab.close()
 		quit()
 
 
 if __name__ == '__main__':
+	path = "test.gcode"
 	support = "true"
 	moves = "false"
-	if len(sys.argv) > 3:
-		path = sys.argv[1]
-		support = sys.argv[2]
-		moves = sys.argv[3]
-	elif len(sys.argv) > 1:
-		path = sys.argv[1]
-	else:
-		script_path = os.path.realpath(__file__)
-		script_dir = os.path.dirname(script_path)
-		path = os.path.join(script_dir, "test.gcode")
-		
+	show = "false"
+	for arg in sys.argv:
+		if "file=" in arg:
+			path = arg.replace("file=", "")
+		if "support=" in arg:
+			support = arg.replace("support=", "")
+		if "moves=" in arg:
+			moves = arg.replace("moves=", "")
+		if "show=" in arg:
+			show = arg.replace("show=", "")
+
 
 	renderer = GcodeRenderer()
-	renderer.run(path, support, moves)
-
-'''
-filename = sys.argv[1].replace("gcode", "png")
-img_path = "./img/"+filename
-mlab.savefig(img_path, magnification=3)
-mlab.close()
-quit()
-
-visual.set_viewer(fig)
-
-axColor = (0.45,0.45,0.45)
-centerAxis = mlab.points3d(0.0, 0.0, 0.0, 4, mode='axes',color=axColor,
-                      line_width=1.0, scale_factor=1.,opacity=1.0)
-centerAxis.actor.property.lighting = False
-
-axes = mlab.axes(centerAxis, color = axColor, nb_labels=9)
-axes.property.display_location = 'background'
-axes.title_text_property.opacity = 0
-axes.label_text_property.bold = 0
-axax = axes.axes
-axax.label_format = '%-#6.2g'
-axax.fly_mode = 'none'
-axax.font_factor = 1.0
-'''
+	renderer.run(path, support, moves, show)
