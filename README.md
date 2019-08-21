@@ -7,7 +7,7 @@ python script for 3d rendering gcode files with mayavi
 	pip install numpy, mayavi, tvtk
 
 ## Usage:
-python ./gcode2png file=test.gcode moves=[true/false] support=[true/false] show=[true/false] bed=[true/false]
+python ./gcode2png test.gcode moves=[true/false] support=[true/false] show=[true/false] bed=[true/false]
 
 moves: show movements in red; default=false
 

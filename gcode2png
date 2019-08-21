@@ -10,8 +10,8 @@ from tvtk.api import tvtk
 class GcodeRenderer:
 
 	def __init__(self):
-		self.imgwidth= 1024
-		self.imgheight = 768
+		self.imgwidth= 800
+		self.imgheight = 600
 
 		self.path=""
 		self.support = ""
@@ -113,7 +113,7 @@ class GcodeRenderer:
 
 		bed = mlab.mesh([[x1, x2], [x3, x4]], [[y1, y2], [y3, y4]], [[z1, z2], [z3, z4]], color=self.bedcolor)
 
-		img = tvtk.JPEGReader(file_name="./bed_texture.jpg")
+		img = tvtk.JPEGReader(file_name=sys.path[0]+"/bed_texture.jpg")
 		texture = tvtk.Texture(input_connection=img.output_port, interpolate=1, repeat=0)
 		bed.actor.actor.texture = texture
 		bed.actor.tcoord_generator_mode = 'plane'
@@ -145,7 +145,7 @@ class GcodeRenderer:
 		mlab.view(focalpoint=(self.bedsize[0]/2,self.bedsize[1]/2,20))
 		filename = self.path.replace("gcode", "png")
 		img_path = "./"+filename
-		mlab.savefig(img_path, magnification=3)
+		mlab.savefig(img_path, size=(800,600))
 		mlab.close()
 		quit()
 
@@ -156,9 +156,13 @@ if __name__ == '__main__':
 	moves = "false"
 	bed = "true"
 	show = "false"
+
+	if "=" not in sys.argv[1]:
+		path = sys.argv[1]
+
 	for arg in sys.argv:
-		if "file=" in arg:
-			path = arg.replace("file=", "")
+		#if "file=" in arg:
+		#	path = arg.replace("file=", "")
 		if "support=" in arg:
 			support = arg.replace("support=", "")
 		if "moves=" in arg:
