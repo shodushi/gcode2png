@@ -19,3 +19,7 @@ bed: show printbed; default=true
 
 
 show: true = show rendered image; false = save rendered image as png file
+
+
+
+gcodeparser forked and modifed from: https://github.com/jonathanwin/yagv
