@@ -22,4 +22,4 @@ show: true = show rendered image; false = save rendered image as png file
 
 
 ## Thanks to:
-gcodeparser forked and modifed from: https://github.com/jonathanwin/yagv
+gcodeParser.py forked and modifed from: https://github.com/jonathanwin/yagv
