@@ -50,12 +50,14 @@ class GcodeRenderer:
 		self.movecolor = red
 
 
-	def run(self, path, support, moves, show):
+	def run(self, path, support, moves, bed, show):
 		self.path = path
 		self.support = support
 		self.moves = moves
 		self.createScene()
-		self.createBed()
+		if bed == "true":
+			self.createBed()
+		
 		self.loadModel(self.path)
 		self.plotModel()
 		self.plotSupport()
@@ -152,6 +154,7 @@ if __name__ == '__main__':
 	path = "test.gcode"
 	support = "true"
 	moves = "false"
+	bed = "true"
 	show = "false"
 	for arg in sys.argv:
 		if "file=" in arg:
@@ -160,9 +163,11 @@ if __name__ == '__main__':
 			support = arg.replace("support=", "")
 		if "moves=" in arg:
 			moves = arg.replace("moves=", "")
+		if "bed=" in arg:
+			bed = arg.replace("bed=", "")
 		if "show=" in arg:
 			show = arg.replace("show=", "")
 
 
 	renderer = GcodeRenderer()
-	renderer.run(path, support, moves, show)
+	renderer.run(path, support, moves, bed, show)
