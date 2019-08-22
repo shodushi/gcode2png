@@ -45,8 +45,6 @@ class GcodeRenderer:
 		self.supportcolor = lightgrey
 		self.extrudecolor = blue
 		self.bedcolor = mediumgrey
-		self.linecolor1 = darkgrey1
-		self.linecolor2 = darkgrey2
 		self.movecolor = red
 
 
@@ -143,11 +141,9 @@ class GcodeRenderer:
 		mlab.view(320, 70)
 		mlab.view(distance=20)
 		mlab.view(focalpoint=(self.bedsize[0]/2,self.bedsize[1]/2,20))
-		filename = self.path.replace("gcode", "png")
-		img_path = "./"+filename
+		img_path = self.path.replace("gcode", "png")
 		mlab.savefig(img_path, size=(800,600))
 		mlab.close()
-		quit()
 
 
 if __name__ == '__main__':
@@ -157,21 +153,38 @@ if __name__ == '__main__':
 	bed = "true"
 	show = "false"
 
-	if "=" not in sys.argv[1]:
+
+	if "batch" in sys.argv[1] and "=" not in sys.argv[2]:
+		path = sys.argv[2]
+
+		files = []
+		# r=root, d=directories, f = files
+		for r, d, f in os.walk(path):
+			for file in f:
+				if '.gcode' in file:
+					files.append(os.path.join(r, file))
+		for f in files:
+			print(f)
+			path = f
+			renderer = GcodeRenderer()
+			renderer.run(path, support, moves, bed, show)
+
+	elif "=" not in sys.argv[1]:
 		path = sys.argv[1]
+	
+		for arg in sys.argv:
+			if "support=" in arg:
+				support = arg.replace("support=", "")
+			if "moves=" in arg:
+				moves = arg.replace("moves=", "")
+			if "bed=" in arg:
+				bed = arg.replace("bed=", "")
+			if "show=" in arg:
+				show = arg.replace("show=", "")
 
-	for arg in sys.argv:
-		#if "file=" in arg:
-		#	path = arg.replace("file=", "")
-		if "support=" in arg:
-			support = arg.replace("support=", "")
-		if "moves=" in arg:
-			moves = arg.replace("moves=", "")
-		if "bed=" in arg:
-			bed = arg.replace("bed=", "")
-		if "show=" in arg:
-			show = arg.replace("show=", "")
+		renderer = GcodeRenderer()
+		renderer.run(path, support, moves, bed, show)
+	else:
+		print("wrong usage");
 
-
-	renderer = GcodeRenderer()
-	renderer.run(path, support, moves, bed, show)
+	

@@ -29,10 +29,6 @@ class GcodeParser:
 				elif line.startswith("; layer") or line.startswith(";LAYER:") or line.startswith(";TYPE:WALL-INNER") or line.startswith(";TYPE:WALL-OUTER"): 
 					self.category = 'object'
 
-				#if "X" in line and "Y" in line and "F" in line and "E" not in line:
-				#if line.startswith("G1 E-"):
-				#	ignore = True
-
 				self.parseLine()
 			
 		self.model['object'].postProcess()
