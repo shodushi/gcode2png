@@ -3,8 +3,10 @@
 
 python script for 3d rendering gcode files with mayavi
 
+all images are created with width of 800px and somewhat ~600px height
+
 ## Prerequisites:
-	pip install numpy, mayavi, tvtk
+	pip install numpy mayavi tvtk Pillow
 
 ## Usage:
 
