@@ -112,7 +112,8 @@ class GcodeParser:
 		self.model[self.category].do_G92(self.parseArgs(args))
 		
 	def warn(self, msg):
-		print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		#print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		ignore = True
 		
 	def error(self, msg):
 		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
@@ -190,7 +191,8 @@ class GcodeModel:
 				else:
 					coords[axis] = args[axis]
 			else:
-				self.warn("Unknown axis '%s'"%axis)
+				#self.warn("Unknown axis '%s'"%axis)
+				warn=true
 		# build segment
 		absolute = {
 			"X": self.offset["X"] + coords["X"],

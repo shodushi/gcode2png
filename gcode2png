@@ -6,6 +6,16 @@ import sys, time, os
 from mayavi import mlab
 import numpy as np
 from tvtk.api import tvtk
+import logging
+from PIL import Image
+
+
+logger = logging.getLogger('gcodeParser')
+logger.setLevel(level=logging.CRITICAL)
+logger2 = logging.getLogger('tvtk')
+logger2.setLevel(level=logging.CRITICAL)
+logger3 = logging.getLogger('mayavi')
+logger3.setLevel(level=logging.CRITICAL)
 
 class GcodeRenderer:
 
@@ -144,6 +154,12 @@ class GcodeRenderer:
 		img_path = self.path.replace("gcode", "png")
 		mlab.savefig(img_path, size=(800,600))
 		mlab.close()
+		basewidth = 800
+		img = Image.open(img_path)
+		wpercent = (basewidth/float(img.size[0]))
+		hsize = int((float(img.size[1])*float(wpercent)))
+		img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+		img.save(img_path) 
 
 
 if __name__ == '__main__':
