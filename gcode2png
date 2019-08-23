@@ -153,7 +153,7 @@ class GcodeRenderer:
 		mlab.view(focalpoint=(self.bedsize[0]/2,self.bedsize[1]/2,20))
 		img_path = self.path.replace("gcode", "png")
 		mlab.savefig(img_path, size=(800,600))
-		mlab.close()
+		mlab.close(all=True)
 		basewidth = 800
 		img = Image.open(img_path)
 		wpercent = (basewidth/float(img.size[0]))
