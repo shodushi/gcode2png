@@ -6,7 +6,7 @@ python script for 3d rendering gcode files with mayavi
 all images are created with width of 800px and somewhat ~600px height
 
 ## Installation:
-	sudo pip install bokeh matplotlib numpy mayavi Pillow wxPython
+	sudo pip install six==1.12.0 bokeh matplotlib numpy mayavi Pillow wxPython
 
 ## Usage:
 
