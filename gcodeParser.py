@@ -116,7 +116,7 @@ class GcodeParser:
 		ignore = True
 		
 	def error(self, msg):
-		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print ("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		raise Exception("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 
 class BBox(object):
@@ -192,7 +192,8 @@ class GcodeModel:
 					coords[axis] = args[axis]
 			else:
 				#self.warn("Unknown axis '%s'"%axis)
-				warn=true
+				# warn=true
+				pass
 		# build segment
 		absolute = {
 			"X": self.offset["X"] + coords["X"],
@@ -216,7 +217,7 @@ class GcodeModel:
 		coords = dict(self.relative)
 		# update changed coords
 		for axis in args.keys():
-			if coords.has_key(axis):
+			if axis in coords:
 				if self.isRelative:
 					coords[axis] += args[axis]
 				else:
@@ -228,7 +229,7 @@ class GcodeModel:
 			"X": self.offset["X"] + coords["X"],
 			"Y": self.offset["Y"] + coords["Y"],
 			"Z": self.offset["Z"] + coords["Z"],
-			"F": coords["F"],	# no feedrate offset
+			"F": coords["F"],
 			"E": self.offset["E"] + coords["E"],
 			"EE": coords["E"]
 		}
@@ -239,8 +240,6 @@ class GcodeModel:
 			self.parser.lineNb,
 			self.parser.line)
 		self.addSegment(seg)
-			# update model coords
-		
 		self.relative = coords
 		
 	def do_G28(self, args):
@@ -256,7 +255,7 @@ class GcodeModel:
 			args = {"X":0.0, "Y":0.0, "Z":0.0, "E":0.0}
 		# update specified axes
 		for axis in args.keys():
-			if self.offset.has_key(axis):
+			if axis in self.offset:
 				# transfer value from relative to offset
 				self.offset[axis] += self.relative[axis] - args[axis]
 				self.relative[axis] = args[axis]
@@ -323,12 +322,7 @@ class GcodeModel:
 			seg.layerIdx = currentLayerIdx
 			seg.extrude = seg.coords["EE"]
 			
-			
-			#print coords
-			#print seg.coords
-			#print "%s (%s  | %s)"%(style, str(seg.coords), seg.line)
-			#print
-			
+
 			# execute segment
 			coords = seg.coords
 			
@@ -454,9 +448,9 @@ class Layer:
 		
 		
 if __name__ == '__main__':
-	path = "d.gcode"
+	path = "test.gcode"
 
 	parser = GcodeParser()
 	model = parser.parseFile(path)
 
-	print model
+	print(model)
